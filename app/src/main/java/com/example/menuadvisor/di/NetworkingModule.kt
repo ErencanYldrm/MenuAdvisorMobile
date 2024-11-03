@@ -46,7 +46,7 @@ class NetworkingModule {
         okHttpClient: OkHttpClient,
         gsonConverterFactory: GsonConverterFactory
     ): Retrofit{
-        return Retrofit.Builder().baseUrl("https://menuadv.azurewebsites.net/")
+        return Retrofit.Builder().baseUrl("https://menuadvmobile-hubvgncqeng7gye8.italynorth-01.azurewebsites.net/")
             .addConverterFactory(gsonConverterFactory)
             .client(okHttpClient)
             .build()
