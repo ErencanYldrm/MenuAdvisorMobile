@@ -36,6 +36,10 @@ class AuthRepository @Inject constructor(
             )
         )
 
+    suspend fun info() =
+        authService.info()
+
+
 
 //    suspend fun confirmEmail(userId: String, code: String) =
 //        authService.confirmEmail(userId, code)

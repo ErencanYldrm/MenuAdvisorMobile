@@ -2,6 +2,7 @@ package com.example.menuadvisor.presentation.auth_screens
 
 import CustomOutlinedButton
 import FilledButton
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -45,8 +46,8 @@ fun LoginScreen(
             if (response != null) {
                 if (response.succeeded == true) {
                     // Navigate to the main screen after login success
-                    navController.navigate("main_screen_route") {
-                        popUpTo("login_screen_route") { inclusive = true }
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
                     }
                 } else {
                     Toast.makeText(
@@ -160,6 +161,7 @@ fun LoginScreen(
             isLoading = isLoading,
             onClick = {
                 scope.launch {
+                    Log.d("asd", "Login button clicked")
                     viewModel.login(email, password)
                 }
             }
@@ -172,7 +174,7 @@ fun LoginScreen(
             text = "Sign Up",
             onClick = {
                 scope.launch {
-                    navController.navigate("SignUp_Screen")
+                    navController.navigate("signup")
                 }
             },
         )

@@ -17,6 +17,9 @@ interface AuthService {
     // Base URL: https://menu-advisor.azurewebsites.net/
     // Endpoint: api/Account/register
 
+    @GET("info")
+    suspend fun info(): Response<ApiResponse<AuthData>>
+
     @POST("api/Account/register")
     suspend fun register(
         @Body requestBody: RegisterRequest

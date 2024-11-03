@@ -26,6 +26,25 @@ class AuthViewModel @Inject constructor(
     val resetResponse = MutableLiveData<ApiResponse<String>?>()
     var isLoading = MutableLiveData<Boolean>()
 
+    suspend fun info() {
+        isLoading.postValue(true)
+        authRepository.info().let {
+            if (it.isSuccessful) {
+                loginResponse.postValue(it.body())
+            } else {
+                loginResponse.postValue(
+                    ApiResponse(
+                        data = null,
+                        errors = null,
+                        message = it.errorBody()?.string(),
+                        succeeded = false
+                    )
+                )
+            }
+        }
+        isLoading.postValue(false)
+    }
+
     suspend fun login(
         email: String,
         password: String
