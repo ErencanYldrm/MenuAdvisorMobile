@@ -85,8 +85,6 @@ fun SignUpScreen(
             if (it != null) {
                 registerResponse = it
                 if (it.succeeded == true) {
-                    Log.d("yuci", " register data ${it.data.toString()}")
-                    viewModel.id.value = it.data.toString()
                     navController.navigate("login")
                 } else {
                     Log.d("yuci", "message: ${it.toString()}")
@@ -283,6 +281,9 @@ fun SignUpScreen(
                                 confirmPassword
                             )
                         }
+                    }
+                    else{
+                        Log.d("yuci", "emailError: $emailError, passwordError: $passwordError, confirmPassword: $confirmPassword, password: $password")
                     }
                 },
             )

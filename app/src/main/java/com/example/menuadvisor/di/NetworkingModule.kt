@@ -1,7 +1,15 @@
 package com.example.menuadvisor.di
 
 import com.example.menuadvisor.api.AuthService
+import com.example.menuadvisor.api.FavoritesService
+import com.example.menuadvisor.api.PlaceService
+import com.example.menuadvisor.api.ProductService
+import com.example.menuadvisor.api.ReviewService
 import com.example.menuadvisor.repository.AuthRepository
+import com.example.menuadvisor.repository.FavoritesRepository
+import com.example.menuadvisor.repository.PlaceRepository
+import com.example.menuadvisor.repository.ProductRepository
+import com.example.menuadvisor.repository.ReviewRepository
 //import com.example.menuadvisor.util.Constants.Companion.BASE_URL
 import dagger.Module
 import dagger.Provides
@@ -66,41 +74,53 @@ class NetworkingModule {
         return AuthRepository(authService)
     }
 
+    @Singleton
+    @Provides
+    fun provideFavoritesService(retrofit: Retrofit): FavoritesService {
+        return retrofit.create(FavoritesService::class.java)
+    }
 
-//    @Singleton
-//    @Provides
-//    fun providePlaceService(retrofit: Retrofit): PlaceService {
-//        return retrofit.create(PlaceService::class.java)
-//    }
-//
-//
-//    @Singleton
-//    @Provides
-//    fun providePlaceRepository(placeService: PlaceService): PlaceRepository {
-//        return PlaceRepository(placeService)
-//    }
-//
-//    @Singleton
-//    @Provides
-//    fun provideProductService(retrofit: Retrofit): ProductService {
-//        return retrofit.create(ProductService::class.java)
-//    }
-//
-//    @Singleton
-//    @Provides
-//    fun provideProductRepository(productService: ProductService): ProductRepository {
-//        return ProductRepository(productService)
-//    }
-//
-//    @Singleton
-//    @Provides
-//    fun provideReviewService(retrofit: Retrofit): ReviewService {
-//        return retrofit.create(ReviewService::class.java)
-//    }
-//
-//    @Singleton
-//    @Provides
-//    fun provideReviewRepository(reviewService: ReviewService): ReviewRepository {
-//        return ReviewRepository(reviewService)
-//    }
+    @Singleton
+    @Provides
+    fun provideFavoritesRepository(favoritesService: FavoritesService): FavoritesRepository {
+        return FavoritesRepository(favoritesService)
+    }
+
+
+    @Singleton
+    @Provides
+    fun providePlaceService(retrofit: Retrofit): PlaceService {
+        return retrofit.create(PlaceService::class.java)
+    }
+
+
+    @Singleton
+    @Provides
+    fun providePlaceRepository(placeService: PlaceService): PlaceRepository {
+        return PlaceRepository(placeService)
+    }
+
+    @Singleton
+    @Provides
+    fun provideProductService(retrofit: Retrofit): ProductService {
+        return retrofit.create(ProductService::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideProductRepository(productService: ProductService): ProductRepository {
+        return ProductRepository(productService)
+    }
+
+    @Singleton
+    @Provides
+    fun provideReviewService(retrofit: Retrofit): ReviewService {
+        return retrofit.create(ReviewService::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideReviewRepository(reviewService: ReviewService): ReviewRepository {
+        return ReviewRepository(reviewService)
+    }
 }

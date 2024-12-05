@@ -23,89 +23,86 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun CustomNavigationBar(navController: NavController) {
-    var selected by remember { mutableStateOf(0) }
-
+fun CustomNavigationBar(
+    navController: NavController,
+    selectedTab: Int
+) {
     BottomAppBar(
         containerColor = Color(0xFFF9F9F9),
         contentPadding = PaddingValues(0.dp)
     ) {
         NavigationBarItem(
             label = { Text("Home") },
-            selected = selected == 0,
+            selected = selectedTab == 0,
             onClick = {
-                selected = 0
-                navController.navigate("home_route")
+                navController.navigate("home")
             },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home",
-                    tint = if (selected == 0) Color(0xFFFFFFFF) else Color.Black
+                    tint = if (selectedTab == 0) Color(0xFFFFFFFF) else Color.Black
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
+                selectedIconColor = Color(0xFFFFFFFF),
                 selectedTextColor = Color(0xFF1E90FF),
                 indicatorColor = Color(0xFF1E90FF)
             )
         )
         NavigationBarItem(
             label = { Text("Find") },
-            selected = selected == 1,
+            selected = selectedTab == 1,
             onClick = {
-                selected = 1
-                navController.navigate("find_route")
+                navController.navigate("login")
             },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Find",
-                    tint = if (selected == 1) Color(0xFF1E90FF) else Color.Black
+                    tint = if (selectedTab == 1) Color(0xFFFFFFFF) else Color.Black
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
+                selectedIconColor = Color(0xFFFFFFFF),
                 selectedTextColor = Color(0xFF1E90FF),
                 indicatorColor = Color(0xFF1E90FF)
             )
         )
         NavigationBarItem(
             label = { Text("Favorites") },
-            selected = selected == 2,
+            selected = selectedTab == 2,
             onClick = {
-                selected = 2
-                navController.navigate("favorites_route")
+                navController.navigate("favorites")
             },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favorites",
-                    tint = if (selected == 2) Color(0xFF1E90FF) else Color.Black
+                    tint = if (selectedTab == 2) Color(0xFFFFFFFF) else Color.Black
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
+                selectedIconColor = Color(0xFFFFFFFF),
                 selectedTextColor = Color(0xFF1E90FF),
                 indicatorColor = Color(0xFF1E90FF)
             )
         )
         NavigationBarItem(
             label = { Text("Profile") },
-            selected = selected == 3,
+            selected = selectedTab == 3,
             onClick = {
-                selected = 3
-                navController.navigate("profile_route")
+                navController.navigate("profile")
             },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
-                    tint = if (selected == 3) Color(0xFF1E90FF) else Color.Black
+                    tint = if (selectedTab == 3) Color(0xFFFFFFFF) else Color.Black
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
+                selectedIconColor = Color(0xFFFFFFFF),
                 selectedTextColor = Color(0xFF1E90FF),
                 indicatorColor = Color(0xFF1E90FF)
             )
@@ -113,8 +110,3 @@ fun CustomNavigationBar(navController: NavController) {
     }
 }
 
-@Preview
-@Composable
-fun CustomNavigationBarPreview() {
-    CustomNavigationBar(navController = rememberNavController())
-}

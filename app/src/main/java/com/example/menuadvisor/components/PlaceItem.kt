@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,7 +57,9 @@ fun ProductItem(
     image: String,
     placeNameOrDistance: String,
     rate: String,
-    onClick: () -> Unit = {}
+    isFavorited: Boolean,
+    onClick: () -> Unit = {},
+    onFavoriteClick: () -> Unit = {}
 ) {
     Box(
         Modifier.clickable { onClick() }
@@ -112,7 +116,8 @@ fun ProductItem(
                         Text(
                             text = placeNameOrDistance,
                             color = Color.Gray,
-                            fontSize = 12.sp,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Normal,
                             modifier = Modifier.padding(top = 4.dp),
                             textAlign = TextAlign.Start,
                             overflow = TextOverflow.Ellipsis,
@@ -127,11 +132,22 @@ fun ProductItem(
                             .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        RateCard(rate = rate)
+                        RateCard(rate = rate.toDouble())
                     }
                 }
             }
         }
+
+        // Heart icon to indicate favorite status
+        Icon(
+            imageVector = if (isFavorited) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            contentDescription = if (isFavorited) "Unfavorite" else "Favorite",
+            tint = if (isFavorited) Color.Black else Color.Gray,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(18.dp)
+                .clickable { onFavoriteClick() }
+        )
     }
 }
 
@@ -145,12 +161,12 @@ fun PlaceLogo(
     onClick: () -> Unit = {}
 ) {
     val randomColor = getRandomColor()
+    val displayText = if (title.isNotEmpty()) title.first().toString() else "?"
 
     Column(
         modifier = Modifier
             .clickable { onClick() },
     ) {
-
         Box(
             modifier = Modifier
                 .size(size.dp)
@@ -163,11 +179,11 @@ fun PlaceLogo(
                 horizontalAlignment = Alignment.End
             ) {
                 if (showRate) {
-                    RateCard(rate = rate)
+                    RateCard(rate = rate.toDouble())
                 }
             }
             Text(
-                text = title.first().toString(),
+                text = displayText,
                 color = Color.White,
                 fontSize = 40.sp,
                 textAlign = TextAlign.Center
@@ -185,7 +201,7 @@ private fun getRandomColor(): Int {
 }
 
 @Composable
-fun RateCard(rate: String) {
+fun RateCard(rate: Double) {
     Card(
         modifier = Modifier
             .padding(4.dp)
@@ -212,7 +228,7 @@ fun RateCard(rate: String) {
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                text = rate,
+                text = "4.0",
                 fontSize = 24.sp,
                 color = Color(0xFFFFD02B)
             )
@@ -229,20 +245,27 @@ fun RateCard(rate: String) {
 
 @Composable
 fun Base64Image(base64String: String, modifier: Modifier = Modifier) {
-    // Step 1: Convert base64 string to Bitmap
-    val bitmap = remember(base64String) {
-        decodeBase64ToBitmap(base64String)
+    if (base64String.isBlank()) return
+
+    val cleanBase64 = if (base64String.contains(",")) {
+        base64String.split(",")[1]
+    } else {
+        base64String
+    }
+    
+    val imageBitmap = remember(cleanBase64) {
+        try {
+            val imageBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            bitmap?.asImageBitmap()
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    // Step 2: Convert Bitmap to ImageBitmap
-    val imageBitmap = remember(bitmap) {
-        bitmap?.asImageBitmap()
-    }
-
-    // Step 3: Display the ImageBitmap
-    imageBitmap?.let {
+    if (imageBitmap != null) {
         Image(
-            bitmap = it,
+            bitmap = imageBitmap,
             contentDescription = null,
             modifier = modifier,
             contentScale = ContentScale.Crop
@@ -267,6 +290,7 @@ fun ProductItemPreview() {
         title = "Cappuccino",
         image = "",
         placeNameOrDistance = "Starbucks - Kültür",
-        rate = "4.2"
+        rate = "4.2",
+        isFavorited = false
     )
 }

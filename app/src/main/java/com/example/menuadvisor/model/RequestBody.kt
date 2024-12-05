@@ -36,7 +36,7 @@ data class ReviewRequest(
     val image: String? = null,
     val price: Int? = null,
     val productId: Int,
-    val userId: String,
+    val createdBy: String,
 )
 
 data class ProductRequest(

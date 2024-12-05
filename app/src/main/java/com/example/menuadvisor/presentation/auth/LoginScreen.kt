@@ -2,6 +2,7 @@ package com.example.menuadvisor.presentation.auth_screens
 
 import CustomOutlinedButton
 import FilledButton
+import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -161,7 +162,6 @@ fun LoginScreen(
             isLoading = isLoading,
             onClick = {
                 scope.launch {
-                    Log.d("asd", "Login button clicked")
                     viewModel.login(email, password)
                 }
             }
