@@ -45,7 +45,7 @@ fun SearchButton(navController: NavController) {
             .fillMaxWidth()
             .padding(16.dp)
             .clickable {
-                navController.navigate("searchScreen")
+                navController.navigate("search")
             },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)

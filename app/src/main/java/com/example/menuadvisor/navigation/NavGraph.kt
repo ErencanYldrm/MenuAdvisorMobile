@@ -21,6 +21,7 @@ import com.example.menuadvisor.presentation.find.FindScreen
 import com.example.menuadvisor.presentation.home_screen.HomeScreen
 import com.example.menuadvisor.presentation.profile.ProfileScreen
 import com.example.menuadvisor.presentation.profile.UserReviewsScreen
+import com.example.menuadvisor.presentation.search.SearchScreen
 
 @Composable
 fun NavGraph(startDestination: String = "login") {
@@ -100,6 +101,11 @@ fun NavGraph(startDestination: String = "login") {
                 initialComment = initialComment,
                 isEdit = isEdit
             )
+        }
+        composable(
+            route = "search"
+        ) {
+            SearchScreen(navController = navController)
         }
     }
 }
