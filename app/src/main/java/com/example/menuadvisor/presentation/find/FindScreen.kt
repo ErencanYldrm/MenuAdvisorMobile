@@ -1,11 +1,15 @@
 package com.example.menuadvisor.presentation.find
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -19,6 +23,7 @@ import com.google.maps.android.compose.*
 import com.example.menuadvisor.components.CustomNavigationBar
 import androidx.navigation.NavController
 import com.example.menuadvisor.utils.RequestLocationPermission
+import com.google.android.gms.maps.model.MapStyleOptions
 
 @Composable
 fun FindScreen(
@@ -28,6 +33,8 @@ fun FindScreen(
     val context = LocalContext.current
     val places by viewModel.places.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
+    val favoritePlaceIds by viewModel.favoritePlaceIds.collectAsState()
+    var selectedPlace by remember { mutableStateOf<Int?>(null) }
 
     // Antalya koordinatları (varsayılan konum)
     val defaultLocation = LatLng(36.8969, 30.7133)
@@ -60,7 +67,11 @@ fun FindScreen(
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(
                     isMyLocationEnabled = hasLocationPermission,
-                    mapType = MapType.NORMAL
+                    mapType = MapType.NORMAL,
+                    mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
+                        context,
+                        com.example.menuadvisor.R.raw.map_style
+                    )
                 ),
                 uiSettings = MapUiSettings(
                     zoomControlsEnabled = true,
@@ -74,44 +85,38 @@ fun FindScreen(
                     val lon = place.lon?.replace(",", ".")?.toDoubleOrNull()
 
                     if (lat != null && lon != null) {
-                        val rating = place.rating?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
-                        val markerColor = if (rating >= 4.0) {
-                            BitmapDescriptorFactory.HUE_GREEN
+                        val markerColor = if (place.id in favoritePlaceIds) {
+                            BitmapDescriptorFactory.HUE_YELLOW
                         } else {
                             BitmapDescriptorFactory.HUE_RED
                         }
 
-                        MarkerInfoWindow(
+                        Marker(
                             state = MarkerState(position = LatLng(lat, lon)),
+                            title = place.name,
+                            snippet = "⭐ ${place.rating}",
                             icon = BitmapDescriptorFactory.defaultMarker(markerColor),
-                            onClick = {
-                                place.id?.let { placeId ->
-                                    navController.navigate("placeDetailScreen/$placeId")
+                            onClick = { marker ->
+                                selectedPlace = place.id
+                                marker.showInfoWindow()
+                                true
+                            },
+                            onInfoWindowClick = {
+                                selectedPlace?.let { placeId ->
+                                    navController.navigate("placeDetailScreen/$placeId") {
+                                        popUpTo("find") {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                false // Info window'u gösterme
                             }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(8.dp)
-                            ) {
-                                Text(
-                                    text = "${place.name}\n⭐ ${place.rating ?: "0.0"}",
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
-                                )
-                            }
-                        }
+                        )
                     }
                 }
             }
             CustomNavigationBar(navController = navController, selectedTab = 1)
         }
     }
-
 }
