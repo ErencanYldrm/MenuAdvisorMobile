@@ -9,6 +9,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -31,6 +32,13 @@ interface ReviewService {
     @POST("api/v1/Review")
     suspend fun postReview(
         @Header("Authorization") token: String,
+        @Body requestBody: ReviewRequest
+    ): Response<ApiResponse<Int>>
+
+    @PUT("api/v1/Review/{id}")
+    suspend fun updateReview(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
         @Body requestBody: ReviewRequest
     ): Response<ApiResponse<Int>>
 

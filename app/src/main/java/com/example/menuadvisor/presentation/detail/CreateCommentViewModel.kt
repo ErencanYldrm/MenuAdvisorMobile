@@ -54,25 +54,10 @@ class CreateCommentViewModel @Inject constructor(
     var productId = MutableLiveData<Int?>()
     var image  = MutableLiveData<String>()
     var imageUri = MutableLiveData<Uri>()
-    var userId = MutableLiveData<String?>()
-    var userName = MutableLiveData<String?>()
 
     init {
         viewModelScope.launch {
-            userPreferences.userId.collect { savedUserId ->
-                Log.d("CreateCommentDebug", "UserPreferences - UserId: $savedUserId")
-                if (savedUserId.isNullOrEmpty()) {
-                    Log.e("CreateCommentDebug", "UserId is null or empty!")
-                }
-                userId.postValue(savedUserId)
-            }
-        }
-        
-        viewModelScope.launch {
-            userPreferences.userName.collect { savedUserName ->
-                Log.d("CreateCommentDebug", "UserPreferences - UserName: $savedUserName")
-                userName.postValue(savedUserName)
-            }
+            Log.d("CreateCommentDebug", "ViewModel initialized")
         }
     }
 
@@ -157,32 +142,64 @@ class CreateCommentViewModel @Inject constructor(
         }
     }
 
-    suspend fun postReview(reviewRequest: ReviewRequest) {
+    fun updateReview(reviewId: Int, reviewRequest: ReviewRequest) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                if (reviewRequest.createdBy.isEmpty()) {
-                    Log.e("CreateCommentDebug", "CreatedBy is empty! UserId: ${userId.value}")
+                Log.d("CreateCommentDebug", "ReviewId: $reviewId")
+                Log.d("CreateCommentDebug", "ReviewRequest: description=${reviewRequest.description}, rate=${reviewRequest.rate}, productId=${reviewRequest.productId}")
+                
+                val response = reviewRepository.updateReview(reviewId, reviewRequest)
+                if (response.isSuccessful) {
+                    Log.d("CreateCommentDebug", "Review update successful")
+                    _reviewResponse.value = ApiResponse(
+                        data = reviewId,
+                        errors = null,
+                        message = "Yorum başarıyla güncellendi",
+                        succeeded = true
+                    )
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("CreateCommentDebug", "Review update failed with status ${response.code()}")
+                    Log.e("CreateCommentDebug", "Error body: $errorBody")
                     _reviewResponse.value = ApiResponse(
                         data = null,
                         errors = null,
-                        message = "Kullanıcı bilgisi bulunamadı",
+                        message = errorBody,
                         succeeded = false
                     )
-                    return@launch
                 }
-                
+            } catch (e: Exception) {
+                Log.e("CreateCommentDebug", "Error updating review", e)
+                _reviewResponse.value = ApiResponse(
+                    data = null,
+                    errors = null,
+                    message = "Yorum güncelleme sırasında hata oluştu: ${e.message}",
+                    succeeded = false
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun postReview(reviewRequest: ReviewRequest) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
                 Log.d("CreateCommentDebug", "Sending ReviewRequest: $reviewRequest")
                 val response = reviewRepository.postReview(reviewRequest)
                 if (response.isSuccessful) {
                     Log.d("CreateCommentDebug", "Review post successful: ${response.body()}")
                     _reviewResponse.value = response.body()
                 } else {
-                    Log.d("CreateCommentDebug", "Review post failed: ${response.errorBody()?.string()}")
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("CreateCommentDebug", "Review post failed with status ${response.code()}")
+                    Log.e("CreateCommentDebug", "Error body: $errorBody")
                     _reviewResponse.value = ApiResponse(
                         data = null,
                         errors = null,
-                        message = response.errorBody()?.string(),
+                        message = errorBody,
                         succeeded = false
                     )
                 }
@@ -191,7 +208,7 @@ class CreateCommentViewModel @Inject constructor(
                 _reviewResponse.value = ApiResponse(
                     data = null,
                     errors = null,
-                    message = e.message,
+                    message = "Yorum gönderme sırasında hata oluştu: ${e.message}",
                     succeeded = false
                 )
             } finally {

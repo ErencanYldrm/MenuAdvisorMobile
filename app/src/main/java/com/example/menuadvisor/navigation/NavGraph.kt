@@ -1,15 +1,16 @@
 package com.example.menuadvisor.navigation
 
 import PlaceDetailScreen
-import android.provider.ContactsContract.Profile
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode.Companion.Screen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.menuadvisor.presentation.auth.OnboardingScreen
 import com.example.menuadvisor.presentation.auth_screens.LoginScreen
 import com.example.menuadvisor.presentation.auth_screens.SignUpScreen
@@ -64,16 +65,41 @@ fun NavGraph(startDestination: String = "login") {
             val productId = backStackEntry.arguments?.getString("productId")?.toInt()
             ProductDetailScreen(productId = productId, navController = navController)
         }
-        composable("createcomment/{rating}/{productId}") { backStackEntry ->
-            val rating = backStackEntry.arguments?.getString("rating")?.toInt() ?: 0
-            val productId = backStackEntry.arguments?.getString("productId")?.toInt() ?: 0
+        composable(
+            route = "createcomment/{rating}/{productId}?reviewId={reviewId}&initialComment={initialComment}&isEdit={isEdit}",
+            arguments = listOf(
+                navArgument("rating") { type = NavType.IntType },
+                navArgument("productId") { type = NavType.IntType },
+                navArgument("reviewId") { 
+                    type = NavType.StringType
+                    defaultValue = null
+                    nullable = true 
+                },
+                navArgument("initialComment") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
+                },
+                navArgument("isEdit") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStackEntry ->
+            val rating = backStackEntry.arguments?.getInt("rating") ?: 0
+            val productId = backStackEntry.arguments?.getInt("productId") ?: 0
+            val reviewId = backStackEntry.arguments?.getString("reviewId")?.toIntOrNull()
+            val initialComment = backStackEntry.arguments?.getString("initialComment") ?: ""
+            val isEdit = backStackEntry.arguments?.getBoolean("isEdit") ?: false
+
             CreateCommentScreen(
                 navController = navController,
                 initialRating = rating,
-                productId = productId
+                productId = productId,
+                reviewId = reviewId,
+                initialComment = initialComment,
+                isEdit = isEdit
             )
         }
     }
 }
-
-

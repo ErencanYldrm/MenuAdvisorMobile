@@ -87,9 +87,8 @@ fun FavoritesScreen(
                 .padding(it)
                 .padding(top = 6.dp)
         ) {
-            SearchButton(navController)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(26.dp))
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

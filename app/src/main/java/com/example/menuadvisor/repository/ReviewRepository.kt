@@ -48,6 +48,15 @@ class ReviewRepository @Inject constructor(
         requestBody = reviewRequest
     )
 
+    suspend fun updateReview(
+        reviewId: Int,
+        reviewRequest: ReviewRequest
+    ) = reviewService.updateReview(
+        token = "Bearer ${userPreferences.userToken.first()}",
+        id = reviewId,
+        requestBody = reviewRequest
+    )
+
     suspend fun deleteReview(reviewId: Int) = reviewService.deleteReview(
         token = "Bearer ${userPreferences.userToken.first()}",
         id = reviewId

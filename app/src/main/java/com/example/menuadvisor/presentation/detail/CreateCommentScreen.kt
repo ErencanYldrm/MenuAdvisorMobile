@@ -58,6 +58,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.menuadvisor.model.ReviewRequest
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,13 +66,17 @@ fun CreateCommentScreen(
     navController: NavController? = null,
     viewModel: CreateCommentViewModel = hiltViewModel(),
     initialRating: Int = 0,
-    productId: Int = 0
+    productId: Int = 0,
+    reviewId: Int? = null,
+    initialComment: String = "",
+    isEdit: Boolean = false
 ) {
     var rating by remember { mutableStateOf(initialRating) }
-    var comment by remember { mutableStateOf("") }
+    var comment by remember { mutableStateOf(initialComment) }
     val isLoading by viewModel.isLoading.collectAsState()
     val reviewResponse by viewModel.reviewResponse.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.productId.value = productId
@@ -80,7 +85,11 @@ fun CreateCommentScreen(
     LaunchedEffect(reviewResponse) {
         reviewResponse?.let { response ->
             if (response.succeeded == true) {
-                Toast.makeText(context, "Yorum başarıyla gönderildi", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context, 
+                    if (isEdit) "Yorum başarıyla güncellendi" else "Yorum başarıyla gönderildi", 
+                    Toast.LENGTH_SHORT
+                ).show()
                 navController?.previousBackStackEntry?.savedStateHandle?.set("refresh", true)
                 navController?.popBackStack()
             } else {
@@ -106,7 +115,7 @@ fun CreateCommentScreen(
                 modifier = Modifier.clickable { navController?.popBackStack() }
             )
             Text(
-                text = "Add Review",
+                text = if (isEdit) "Yorumu Düzenle" else "Yorum Ekle",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -117,7 +126,7 @@ fun CreateCommentScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Enter Review",
+            text = if (isEdit) "Yorumu Düzenle" else "Yorum Yaz",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -159,7 +168,7 @@ fun CreateCommentScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp),
-            placeholder = { Text("Write your personal experience here") },
+            placeholder = { Text("Deneyiminizi buraya yazın") },
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 unfocusedBorderColor = Color.LightGray,
                 focusedBorderColor = Color(0xFFFFD02B)
@@ -187,7 +196,7 @@ fun CreateCommentScreen(
                     modifier = Modifier.size(32.dp)
                 )
                 Text(
-                    text = "Add a product photo",
+                    text = "Fotoğraf ekle",
                     color = Color(0xFFFFD02B),
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -204,20 +213,27 @@ fun CreateCommentScreen(
             )
         }
 
-        // Post Button
+        // Post/Update Button
         Button(
             onClick = {
                 if (comment.isBlank()) {
                     Toast.makeText(context, "Lütfen bir yorum yazın", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
-                viewModel.viewModelScope.launch {
+                if (isEdit && reviewId != null) {
                     val reviewRequest = ReviewRequest(
+                        id = reviewId,
                         description = comment,
                         rate = rating,
-                        image = viewModel.image.value,
-                        productId = viewModel.productId.value ?: 0,
-                        createdBy = viewModel.userId.value ?: ""
+                        productId = viewModel.productId.value ?: 0
+                    )
+                    viewModel.updateReview(reviewId, reviewRequest)
+                } else {
+                    val reviewRequest = ReviewRequest(
+                        id = 0,
+                        description = comment,
+                        rate = rating,
+                        productId = viewModel.productId.value ?: 0
                     )
                     viewModel.postReview(reviewRequest)
                 }
@@ -237,7 +253,7 @@ fun CreateCommentScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Post")
+                Text(if (isEdit) "Güncelle" else "Gönder")
             }
         }
     }
