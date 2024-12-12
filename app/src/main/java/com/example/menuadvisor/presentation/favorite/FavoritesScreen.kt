@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +47,7 @@ import com.example.menuadvisor.api.FavoritesService
 import com.example.menuadvisor.components.CustomNavigationBar
 import com.example.menuadvisor.components.ProductItem
 import com.example.menuadvisor.components.SearchButton
+import com.example.menuadvisor.model.PlaceData
 import com.example.menuadvisor.presentation.auth.AuthViewModel
 import com.example.menuadvisor.presentation.home.HomeViewModel
 import com.example.menuadvisor.presentation.home_screen.ProductSection
@@ -56,13 +58,23 @@ import com.example.menuadvisor.repository.FavoritesRepository
 fun FavoritesScreen(
     navController: NavController,
     favoritesViewModel: FavoritesViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel = hiltViewModel()
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    productFavoriteViewModel: ProductFavoriteViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
-        favoritesViewModel.getFavorites()
-    }
+    val userId = homeViewModel.token.value ?: return
     val places by homeViewModel.allPlaces.collectAsState()
+    val products by homeViewModel.allProducts.collectAsState()
+    val placeNames by homeViewModel.placeNames.collectAsState()
+    val favorites by favoritesViewModel.favorites.observeAsState(emptyList())
+    val productFavorites by productFavoriteViewModel.getFavorites(userId).collectAsState(initial = emptyList())
     var selectedTab by remember { mutableStateOf("Cafes") }
+
+    // Favori olan ürünleri filtrele
+    val favoriteProducts = products.filter { product ->
+        product.id?.let { productId ->
+            productFavorites.any { it.productId == productId }
+        } ?: false
+    }
 
     Scaffold(
         bottomBar = {
@@ -101,7 +113,7 @@ fun FavoritesScreen(
                     ) {
                         Text(
                             text = "Cafes",
-                            modifier = Modifier.clickable { selectedTab = "Restaurants" },
+                            modifier = Modifier.clickable { selectedTab = "Cafes" },
                             style = if (selectedTab == "Cafes") TextStyle(
                                 color = Color.Blue,
                                 fontSize = 18.sp
@@ -121,10 +133,52 @@ fun FavoritesScreen(
                 item {
                     when (selectedTab) {
                         "Cafes" -> {
-                            RestaurantSection(navController, places)
+                            if (favorites.isNullOrEmpty()) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "No favorite restaurant found.",
+                                        color = Color.Gray,
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(top = 32.dp)
+                                    )
+                                }
+                            } else {
+                                FavoriteRestaurantSection(
+                                    navController = navController,
+                                    restaurants = favorites!!,
+                                    favorites = favorites,
+                                    favoritesViewModel = favoritesViewModel,
+                                    viewModel = homeViewModel
+                                )
+                            }
                         }
                         "Products" -> {
-                            ProductSection(navController)
+                            if (favoriteProducts.isEmpty()) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "No favorite product found.",
+                                        color = Color.Gray,
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(top = 32.dp)
+                                    )
+                                }
+                            } else {
+                                ProductSection(
+                                    navController = navController,
+                                    products = favoriteProducts,
+                                    placeNames = placeNames,
+                                    favorites = favorites,
+                                    favoritesViewModel = favoritesViewModel,
+                                    viewModel = homeViewModel,
+                                    productFavoriteViewModel = productFavoriteViewModel
+                                )
+                            }
                         }
                     }
                 }
@@ -132,6 +186,63 @@ fun FavoritesScreen(
         }
     }
 }
+
+@Composable
+fun FavoriteRestaurantSection(
+    navController: NavController,
+    restaurants: List<PlaceData>,
+    favorites: List<PlaceData>?,
+    favoritesViewModel: FavoritesViewModel,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val reviewCounts by viewModel.placeReviewCounts.collectAsState()
+    
+    Column(
+        modifier = Modifier.height(900.dp)
+    ) {
+        LazyColumn {
+            items(restaurants.size) { index ->
+                restaurants[index].let { place ->
+                    place.name?.let { name ->
+                        place.rating?.let { rating ->
+                            val isFavorited = favorites?.any { it.id == place.id } == true
+                            val reviewCount = place.id?.let { reviewCounts[it] } ?: 0
+                            
+                            if (rating != "-1") {  // rating -1 değilse göster
+                                ProductItem(
+                                    title = name,
+                                    image = "",
+                                    placeNameOrDistance = "",  // Mesafe bilgisini boş bırakıyoruz
+                                    rate = rating,
+                                    reviewCount = reviewCount,
+                                    isFavorited = isFavorited,
+                                    onClick = {
+                                        place.id?.let { id ->
+                                            navController.navigate("placeDetailScreen/$id")
+                                        }
+                                    },
+                                    onFavoriteClick = {
+                                        place.id?.let { placeId ->
+                                            if (isFavorited) {
+                                                favorites?.find { it.id == placeId }?.id?.let { favId ->
+                                                    favoritesViewModel.removeFavorite(favId)
+                                                }
+                                            } else {
+                                                favoritesViewModel.addFavorite(placeId)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 
 

@@ -1,3 +1,5 @@
+package com.example.menuadvisor.model
+
 import com.google.gson.annotations.SerializedName
 
 data class ReviewRequest(

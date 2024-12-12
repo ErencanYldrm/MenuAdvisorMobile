@@ -1,13 +1,18 @@
 package com.example.menuadvisor.presentation.home
 
-import androidx.compose.runtime.mutableStateOf
+import android.content.Context
+import android.location.Location
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.menuadvisor.data.UserPreferences
 import com.example.menuadvisor.model.ApiResponse
 import com.example.menuadvisor.model.PlaceData
+import com.example.menuadvisor.model.ProductData
 import com.example.menuadvisor.repository.PlaceRepository
+import com.example.menuadvisor.repository.ProductRepository
+import com.example.menuadvisor.repository.ReviewRepository
+import com.example.menuadvisor.utils.LocationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,11 +22,32 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val placeRepository: PlaceRepository,
-    private val userPreferences: UserPreferences
-) :
-    ViewModel() {
+    private val productRepository: ProductRepository,
+    private val userPreferences: UserPreferences,
+    private val reviewRepository: ReviewRepository
+) : ViewModel() {
 
     val token = MutableLiveData<String?>()
+    private val _allPlaces = MutableStateFlow<List<PlaceData>>(listOf())
+    val allPlaces: StateFlow<List<PlaceData>> = _allPlaces
+
+    private val _allProducts = MutableStateFlow<List<ProductData>>(listOf())
+    val allProducts: StateFlow<List<ProductData>> = _allProducts
+
+    private val _placeNames = MutableStateFlow<Map<Int, String>>(mapOf())
+    val placeNames: StateFlow<Map<Int, String>> = _placeNames
+
+    private val _placeReviewCounts = MutableStateFlow<Map<Int, Int>>(mapOf())
+    val placeReviewCounts: StateFlow<Map<Int, Int>> = _placeReviewCounts
+
+    private val _productReviewCounts = MutableStateFlow<Map<Int, Int>>(mapOf())
+    val productReviewCounts: StateFlow<Map<Int, Int>> = _productReviewCounts
+
+    private val _userLocation = MutableStateFlow<Location?>(null)
+    val userLocation: StateFlow<Location?> = _userLocation
+
+    private val _placeDistances = MutableStateFlow<Map<Int, Float>>(mapOf())
+    val placeDistances: StateFlow<Map<Int, Float>> = _placeDistances
 
     init {
         viewModelScope.launch {
@@ -30,61 +56,54 @@ class HomeViewModel @Inject constructor(
             }
         }
         getAllPlaces()
+        getAllProducts()
     }
 
-    private val _placesResponse = MutableStateFlow<ApiResponse<List<PlaceData>>?>(null)
-    val placesResponse: StateFlow<ApiResponse<List<PlaceData>>?> = _placesResponse
-
-    private val _places = MutableStateFlow<List<PlaceData>>(listOf())
-    val places: StateFlow<List<PlaceData>> = _places
-
-    private val _favPlaces = MutableStateFlow<List<PlaceData>>(listOf())
-    val favPlaces: StateFlow<List<PlaceData>> = _favPlaces
-
-    private val _allPlaces = MutableStateFlow<List<PlaceData>>(listOf())
-    val allPlaces: StateFlow<List<PlaceData>> = _allPlaces
-
-    private val _searchList = MutableStateFlow<List<PlaceData>>(listOf())
-    val searchList: StateFlow<List<PlaceData>> = _searchList
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    var district = MutableStateFlow("Kepez")
-
-    private var pageNumber: Int = 1
-    private var pageSize: Int = 10
-
-    var searchQuery = MutableStateFlow("")
-
-    fun getPlaces(
-        pageNumber: Int? = 1,
-        pageSize: Int? = 10,
-        district : String? = null,
-        rateSort : Boolean? = false
-    ) {
-        _isLoading.value = true
+    fun updateUserLocation(context: Context) {
         viewModelScope.launch {
-            val response = placeRepository.getPlaces(
-                pageNumber = pageNumber,
-                pageSize = pageSize,
-                district = district,
-                rateSort = rateSort
-            )
-            if (response.isSuccessful) {
-                _placesResponse.value = response.body()
-                response.body()?.data?.let {
-                    _places.value = it
-                }
-            } else {
-                _placesResponse.value = ApiResponse(
-                    data = null,
-                    errors = null,
-                    message = response.errorBody()?.string(),
-                    succeeded = false
-                )
+            try {
+                val location = LocationUtils.getCurrentLocation(context)
+                _userLocation.value = location
+                // Kullanıcının konumu güncellendiğinde, tüm mekanların mesafelerini güncelle
+                updatePlaceDistances()
+            } catch (e: Exception) {
+                // Hata durumunda sessizce devam et
             }
-            _isLoading.value = false
+        }
+    }
+
+    private fun updatePlaceDistances() {
+        try {
+            val currentLocation = _userLocation.value ?: return
+            val newDistances = mutableMapOf<Int, Float>()
+            
+            _allPlaces.value.forEach { place ->
+                try {
+                    place.id?.let { placeId ->
+                        place.lat?.let { latStr ->
+                            place.lon?.let { lonStr ->
+                                val latitude = latStr.replace(",", ".").toDoubleOrNull()
+                                val longitude = lonStr.replace(",", ".").toDoubleOrNull()
+                                
+                                if (latitude != null && longitude != null) {
+                                    val distance = LocationUtils.calculateDistance(
+                                        currentLocation.latitude,
+                                        currentLocation.longitude,
+                                        latitude,
+                                        longitude
+                                    )
+                                    newDistances[placeId] = distance
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Tek bir mekan için hata olursa diğerlerine devam et
+                }
+            }
+            _placeDistances.value = newDistances
+        } catch (e: Exception) {
+            // Genel hata durumunda sessizce devam et
         }
     }
 
@@ -92,46 +111,84 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val response = placeRepository.getPlaces(pageSize = 15)
             if (response.isSuccessful) {
-                response.body()?.data?.let {
-                    _allPlaces.value = it
+                response.body()?.data?.let { places ->
+                    _allPlaces.value = places
+                    // Her mekan için yorum sayısını al
+                    places.forEach { place ->
+                        place.id?.let { placeId ->
+                            getPlaceReviewCount(placeId)
+                        }
+                    }
                 }
             }
         }
     }
 
-    fun getFavPlaces(district: String? = this.district.value) {
+    fun getAllProducts() {
         viewModelScope.launch {
-            val response = placeRepository.getPlaces(district = district, rateSort = true)
-            if (response.isSuccessful) {
-                response.body()?.data?.let {
-                    _favPlaces.value = it
+            try {
+                val response = productRepository.getProducts(name = "", pageSize = 15)
+                if (response.isSuccessful) {
+                    response.body()?.data?.let { products ->
+                        _allProducts.value = products
+                        // Ürünlerin mekan bilgilerini ve yorum sayılarını al
+                        products.forEach { product ->
+                            product.placeId?.let { placeId ->
+                                getPlaceName(placeId)
+                            }
+                            product.id?.let { productId ->
+                                getProductReviewCount(productId)
+                            }
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
 
-    fun loadMore() {
-        pageNumber += 1
+    private fun getPlaceName(placeId: Int) {
         viewModelScope.launch {
-            val response = placeRepository.getPlaces(
-                pageNumber = pageNumber,
-                pageSize = pageSize
-            )
-            if (response.isSuccessful) {
-                response.body()?.data?.let {
-                    _places.value = _places.value + it
+            try {
+                val response = placeRepository.getPlace(placeId)
+                if (response.isSuccessful) {
+                    response.body()?.data?.let { place ->
+                        _placeNames.value = _placeNames.value + (placeId to (place.name ?: ""))
+                    }
                 }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
 
-    fun searchPlace(name: String) {
+    private fun getPlaceReviewCount(placeId: Int) {
         viewModelScope.launch {
-            val response = placeRepository.getPlaces(name = name)
-            if (response.isSuccessful) {
-                response.body()?.data?.let {
-                    _searchList.value = it
+            try {
+                val response = reviewRepository.getReviewCountByPlaceId(placeId)
+                if (response.isSuccessful) {
+                    response.body()?.data?.let { reviews ->
+                        _placeReviewCounts.value = _placeReviewCounts.value + (placeId to reviews.size)
+                    }
                 }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    private fun getProductReviewCount(productId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = reviewRepository.getReviewsByProductId(productId)
+                if (response.isSuccessful) {
+                    response.body()?.data?.let { reviews ->
+                        _productReviewCounts.value = _productReviewCounts.value + (productId to reviews.size)
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }

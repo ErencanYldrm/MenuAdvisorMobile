@@ -5,12 +5,12 @@ import com.example.menuadvisor.api.FavoritesService
 import com.example.menuadvisor.api.PlaceService
 import com.example.menuadvisor.api.ProductService
 import com.example.menuadvisor.api.ReviewService
+import com.example.menuadvisor.data.UserPreferences
 import com.example.menuadvisor.repository.AuthRepository
 import com.example.menuadvisor.repository.FavoritesRepository
 import com.example.menuadvisor.repository.PlaceRepository
 import com.example.menuadvisor.repository.ProductRepository
 import com.example.menuadvisor.repository.ReviewRepository
-//import com.example.menuadvisor.util.Constants.Companion.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -120,7 +120,10 @@ class NetworkingModule {
 
     @Singleton
     @Provides
-    fun provideReviewRepository(reviewService: ReviewService): ReviewRepository {
-        return ReviewRepository(reviewService)
+    fun provideReviewRepository(
+        reviewService: ReviewService,
+        userPreferences: UserPreferences
+    ): ReviewRepository {
+        return ReviewRepository(reviewService, userPreferences)
     }
 }

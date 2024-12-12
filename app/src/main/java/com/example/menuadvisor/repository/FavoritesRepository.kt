@@ -20,4 +20,7 @@ class FavoritesRepository @Inject constructor(
 
     suspend fun getFavorites(userId: String) =
         favoritesService.getFavorites(userId)
+
+    suspend fun getFavoriteRelations(userId: String) =
+        favoritesService.getFavoriteRelations(userId)
 }

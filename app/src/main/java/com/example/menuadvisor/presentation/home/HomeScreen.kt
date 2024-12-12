@@ -12,18 +12,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,254 +29,211 @@ import com.example.menuadvisor.R
 import com.example.menuadvisor.components.CustomNavigationBar
 import com.example.menuadvisor.components.ProductItem
 import com.example.menuadvisor.components.SearchButton
-import com.example.menuadvisor.data.UserPreferences
+import com.example.menuadvisor.model.PlaceData
+import com.example.menuadvisor.model.ProductData
+import com.example.menuadvisor.presentation.favorite.FavoritesViewModel
+import com.example.menuadvisor.presentation.favorite.ProductFavoriteViewModel
 import com.example.menuadvisor.presentation.home.HomeViewModel
-import androidx.compose.runtime.livedata.observeAsState
-import com.example.menuadvisor.components.ProductItemPreview
-import javax.inject.Inject
-import kotlin.math.acos
-import kotlin.math.cos
-import kotlin.math.sin
+import com.example.menuadvisor.utils.RequestLocationPermission
+import com.example.menuadvisor.utils.LocationTest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    favoritesViewModel: FavoritesViewModel = hiltViewModel(),
     navController: NavController,
     context: Context = LocalContext.current
 ) {
     var selectedTab by remember { mutableStateOf("Cafes") }
 
-
     val token = viewModel.token.observeAsState()
-
-    Log.d("HomeScreen", "Token: $token")
-
     val places by viewModel.allPlaces.collectAsState()
+    val products by viewModel.allProducts.collectAsState()
+    val placeNames by viewModel.placeNames.collectAsState()
+    val favorites by favoritesViewModel.favorites.observeAsState(emptyList())
+    val placeDistances by viewModel.placeDistances.collectAsState()
+
+    LaunchedEffect(Unit) {
+        LocationTest.getEmulatorLocation(context)
+    }
+
+    var locationPermissionRequested by remember { mutableStateOf(false) }
+
+    if (!locationPermissionRequested) {
+        RequestLocationPermission { granted ->
+            locationPermissionRequested = true
+            if (granted) {
+                viewModel.updateUserLocation(context)
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Spacer(modifier = Modifier.height(26.dp))
-            SearchButton(navController)
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                item {
-                    Image(
-                        painter = painterResource(id = R.drawable.ads_img),
-                        contentDescription = "Announcement",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    )
-                }
+        Spacer(modifier = Modifier.height(26.dp))
+        SearchButton(navController)
+        
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text(
+                    text = "Cafes",
+                    modifier = Modifier.clickable { selectedTab = "Cafes" },
+                    style = if (selectedTab == "Cafes") TextStyle(
+                        color = Color.Blue,
+                        fontSize = 18.sp
+                    ) else TextStyle(color = Color.Gray, fontSize = 18.sp)
+                )
+                Text(
+                    text = "Products",
+                    modifier = Modifier.clickable { selectedTab = "Products" },
+                    style = if (selectedTab == "Products") TextStyle(
+                        color = Color.Blue,
+                        fontSize = 18.sp
+                    ) else TextStyle(color = Color.Gray, fontSize = 18.sp)
+                )
+            }
+        }
 
-                stickyHeader {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            Text(
-                                text = "Cafes",
-                                modifier = Modifier.clickable { selectedTab = "Restaurants" },
-                                style = if (selectedTab == "Cafes") TextStyle(
-                                    color = Color.Blue,
-                                    fontSize = 18.sp
-                                ) else TextStyle(color = Color.Gray, fontSize = 18.sp)
-                            )
-                            Text(
-                                text = "Products",
-                                modifier = Modifier.clickable { selectedTab = "Products" },
-                                style = if (selectedTab == "Products") TextStyle(
-                                    color = Color.Blue,
-                                    fontSize = 18.sp
-                                ) else TextStyle(color = Color.Gray, fontSize = 18.sp)
-                            )
-                        }
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            item {
+                Image(
+                    painter = painterResource(id = R.drawable.ads_img),
+                    contentDescription = "Announcement",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+            }
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Around You",
-                                color = Color.Gray,
-                                modifier = Modifier.clickable { /* Around You action */ }
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.filter),
-                                contentDescription = "Filter Icon",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable { /* Filter action */ }
-                            )
-                        }
+            item {
+                when (selectedTab) {
+                    "Cafes" -> {
+                        RestaurantSection(
+                            navController = navController,
+                            restaurants = places,
+                            favorites = favorites,
+                            favoritesViewModel = favoritesViewModel,
+                            viewModel = viewModel
+                        )
                     }
-                }
-
-                item {
-                    when (selectedTab) {
-                        "Cafes" -> {
-                            RestaurantSection(navController,places)
-                        }
-
-                        "Products" -> {
-                            ProductItem(
-                                title = "Latte",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = true,
-                                onClick = {}
-                            )
-                            ProductItem(
-                                title = "Cappuccino",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = false,
-                                onClick = {}
-                            )
-                            ProductItem(
-                                title = "Espresso",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = false,
-                                onClick = {}
-                            )
-                            ProductItem(
-                                title = "Mocha",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = false,
-                                onClick = {}
-                            )
-                            ProductItem(
-                                title = "Americano",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = false,
-                                onClick = {}
-                            )
-                            ProductItem(
-                                title = "Macchiato",
-                                image = "",
-                                placeNameOrDistance = "Mado Beach Park",
-                                rate = "4.6",
-                                isFavorited = false,
-                                onClick = {}
-                            )
-
-                        }
+                    "Products" -> {
+                        ProductSection(
+                            navController = navController,
+                            products = products,
+                            placeNames = placeNames,
+                            favorites = favorites,
+                            favoritesViewModel = favoritesViewModel,
+                            viewModel = viewModel
+                        )
                     }
                 }
             }
-            CustomNavigationBar(navController = navController,0)
         }
+        
+        CustomNavigationBar(navController = navController, 0)
     }
 }
-
-
-
-
 
 @Composable
 fun RestaurantSection(
     navController: NavController,
-    restaurants: List<com.example.menuadvisor.model.PlaceData>
+    restaurants: List<PlaceData>,
+    favorites: List<PlaceData>?,
+    favoritesViewModel: FavoritesViewModel,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-
-
-    Column(
-        modifier = Modifier
-            .height(900.dp) // Sabit bir yükseklik belirleniyor
-    ) {
-        LazyColumn{
-            items(restaurants.size) { index ->
-                restaurants[index].name?.let {
-                    restaurants[index].rating?.let { it1 ->
-                        ProductItem(
-                            title = it,
-                            image = "",
-                            placeNameOrDistance = "1.2 km",
-                            rate = it1,
-                            isFavorited = true,
-                                onClick = {
-                                navController.navigate("placeDetailScreen/${restaurants[index].id}")
+    val reviewCounts by viewModel.placeReviewCounts.collectAsState()
+    val placeDistances by viewModel.placeDistances.collectAsState()
+    
+    restaurants.forEach { place ->
+        place.name?.let { name ->
+            place.rating?.let { rating ->
+                val isFavorited = favorites?.any { it.id == place.id } == true
+                val reviewCount = place.id?.let { reviewCounts[it] } ?: 0
+                val distance = place.id?.let { placeDistances[it] }
+                
+                if (rating != "-1") {  // rating -1 değilse göster
+                    ProductItem(
+                        title = name,
+                        image = "",
+                        placeNameOrDistance = if (distance != null) String.format("%.1f km", distance) else "Mesafe hesaplanıyor...",
+                        rate = rating,
+                        reviewCount = reviewCount,
+                        isFavorited = isFavorited,
+                        onClick = {
+                            place.id?.let { id ->
+                                navController.navigate("placeDetailScreen/$id")
                             }
-                        )
-                    }
+                        },
+                        onFavoriteClick = {
+                            place.id?.let { placeId ->
+                                if (isFavorited) {
+                                    favorites?.find { it.id == placeId }?.id?.let { favId ->
+                                        favoritesViewModel.removeFavorite(favId)
+                                    }
+                                } else {
+                                    favoritesViewModel.addFavorite(placeId)
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun ProductSection(
     navController: NavController,
+    products: List<ProductData>,
+    placeNames: Map<Int, String>,
+    favorites: List<PlaceData>?,
+    favoritesViewModel: FavoritesViewModel,
+    viewModel: HomeViewModel = hiltViewModel(),
+    productFavoriteViewModel: ProductFavoriteViewModel = hiltViewModel()
 ) {
-    // Mock data for products
-    val products = listOf(
-        PlaceData("Latte", "4.6")
-    )
-
-    Column(
-        modifier = Modifier
-            .height(900.dp) // Sabit bir yükseklik belirleniyor
-    ) {
-
-        LazyColumn {
-            items(products.size) { index ->
-                products[index].name?.let {
-                    products[index].rating?.let { it1 ->
-                        ProductItem(
-                            title = it,
-                            image = "",
-                            placeNameOrDistance = "Mado Beach Park",
-                            rate = it1,
-                            isFavorited = true,
-                            onClick = {}
-                        )
-                    }
+    val reviewCounts by viewModel.productReviewCounts.collectAsState()
+    val userId = viewModel.token.value ?: return
+    
+    products.forEach { product ->
+        val placeName = product.placeId?.let { placeNames[it] } ?: ""
+        val productId = product.id ?: return@forEach
+        val isFavorited by productFavoriteViewModel.isFavorite(userId, productId).collectAsState(initial = false)
+        val reviewCount = product.id?.let { reviewCounts[it] } ?: 0
+        
+        ProductItem(
+            title = product.name ?: "",
+            image = product.image ?: "",
+            placeNameOrDistance = placeName,
+            rate = product.rate?.toString() ?: "0.0",
+            reviewCount = reviewCount,
+            isFavorited = isFavorited,
+            onClick = {
+                product.id?.let { id ->
+                    navController.navigate("productDetailScreen/$id")
+                }
+            },
+            onFavoriteClick = {
+                if (isFavorited) {
+                    productFavoriteViewModel.removeFavorite(userId, productId)
+                } else {
+                    productFavoriteViewModel.addFavorite(userId, productId)
                 }
             }
-        }
-    }
-}
-
-// Placeholder data class for Place items
-data class PlaceData(
-    val name: String,
-    val rating: String
-)
-
-fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val earthRadius = 6371 // Radius of the earth in km
-    val dLat = Math.toRadians(lat2 - lat1)
-    val dLon = Math.toRadians(lon2 - lon1)
-    val a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
-            sin(dLon / 2) * sin(dLon / 2)
-    val c = 2 * acos(Math.sqrt(a))
-    return earthRadius * c
-}
-
-
-fun getSortedPlaces(userLat: Double, userLon: Double, places: List<com.example.menuadvisor.model.PlaceData>): List<com.example.menuadvisor.model.PlaceData> {
-    return places.sortedBy { place ->
-        place.lat?.let { place.lon?.let { it1 -> calculateDistance(userLat, userLon, it.toDouble(), it1.toDouble()) } }
+        )
     }
 }

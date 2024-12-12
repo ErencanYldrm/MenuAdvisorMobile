@@ -60,7 +60,7 @@ class AuthViewModel @Inject constructor(
                 loginResponse.postValue(it.body())
                 it.body()?.data?.let { authData ->
                     viewModelScope.launch {
-                        userPreferences.saveUserData(authData)
+                        userPreferences.saveUserData(authData as AuthData)
                     }
                 }
             } else {
@@ -78,7 +78,7 @@ class AuthViewModel @Inject constructor(
         isLoading.postValue(false)
     }
 
-    suspend fun logout() {
+    suspend fun clearUserData() {
         viewModelScope.launch {
             userPreferences.clearUserData()
         }

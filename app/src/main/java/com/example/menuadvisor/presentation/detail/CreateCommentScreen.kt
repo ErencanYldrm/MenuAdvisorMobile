@@ -217,7 +217,7 @@ fun CreateCommentScreen(
                         rate = rating,
                         image = viewModel.image.value,
                         productId = viewModel.productId.value ?: 0,
-                        createdBy = viewModel.userName.value ?: viewModel.userId.value ?: ""
+                        createdBy = viewModel.userId.value ?: ""
                     )
                     viewModel.postReview(reviewRequest)
                 }

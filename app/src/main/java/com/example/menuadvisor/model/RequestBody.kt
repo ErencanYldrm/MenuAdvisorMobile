@@ -30,15 +30,6 @@ data class ResetPasswordRequest(
     val confirmPassword: String
 )
 
-data class ReviewRequest(
-    val description: String,
-    val rate: Int,
-    val image: String? = null,
-    val price: Int? = null,
-    val productId: Int,
-    val createdBy: String,
-)
-
 data class ProductRequest(
     val name: String,
     val description: String = "",

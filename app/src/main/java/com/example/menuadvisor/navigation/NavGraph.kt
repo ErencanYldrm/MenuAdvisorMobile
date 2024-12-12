@@ -5,6 +5,7 @@ import android.provider.ContactsContract.Profile
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode.Companion.Screen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,8 +16,10 @@ import com.example.menuadvisor.presentation.auth_screens.SignUpScreen
 import com.example.menuadvisor.presentation.detail.CreateCommentScreen
 import com.example.menuadvisor.presentation.detail.ProductDetailScreen
 import com.example.menuadvisor.presentation.favorite.FavoritesScreen
+import com.example.menuadvisor.presentation.find.FindScreen
 import com.example.menuadvisor.presentation.home_screen.HomeScreen
 import com.example.menuadvisor.presentation.profile.ProfileScreen
+import com.example.menuadvisor.presentation.profile.UserReviewsScreen
 
 @Composable
 fun NavGraph(startDestination: String = "login") {
@@ -38,6 +41,9 @@ fun NavGraph(startDestination: String = "login") {
         composable("home") {
             HomeScreen(navController = navController)
         }
+        composable("find") {
+            FindScreen(navController = navController)
+        }
         composable("favorites") {
             FavoritesScreen(navController = navController)
         }
@@ -47,6 +53,12 @@ fun NavGraph(startDestination: String = "login") {
         }
         composable("profile") {
             ProfileScreen(navController = navController)
+        }
+        composable("userReviews") {
+            UserReviewsScreen(
+                navController = navController,
+                viewModel = hiltViewModel()
+            )
         }
         composable("productDetailScreen/{productId}") { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId")?.toInt()

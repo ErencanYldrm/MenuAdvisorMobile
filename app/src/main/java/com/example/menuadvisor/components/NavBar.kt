@@ -54,7 +54,7 @@ fun CustomNavigationBar(
             label = { Text("Find") },
             selected = selectedTab == 1,
             onClick = {
-                navController.navigate("login")
+                navController.navigate("find")
             },
             icon = {
                 Icon(

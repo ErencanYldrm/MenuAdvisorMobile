@@ -95,7 +95,6 @@ fun ProductDetailScreen(
         viewModel.productId.value = productId
         viewModel.getProduct()
         viewModel.getCommentsByProductId()
-        favoritesViewModel.getFavorites()
     }
 
     Column(

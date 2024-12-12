@@ -49,7 +49,7 @@ class ProductDetailViewModel @Inject constructor(
         productId.value?.let {
             productRepository.getProduct(productId.value!!).let {
                 if (it.isSuccessful) {
-                    product.value = it.body()?.data!!
+                    product.value = it.body()?.data as ProductData?
                 }
             }
         }
@@ -59,7 +59,7 @@ class ProductDetailViewModel @Inject constructor(
         productId.value?.let {
             reviewRepository.getReviewsByProductId(it).let {
                 if (it.isSuccessful) {
-                    commentList.value = it.body()?.data!!
+                    commentList.value = it.body()?.data as List<ReviewData>?
                 }
             }
         }

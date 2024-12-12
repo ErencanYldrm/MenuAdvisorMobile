@@ -57,6 +57,7 @@ fun ProductItem(
     image: String,
     placeNameOrDistance: String,
     rate: String,
+    reviewCount: Int = 0,
     isFavorited: Boolean,
     onClick: () -> Unit = {},
     onFavoriteClick: () -> Unit = {}
@@ -113,16 +114,18 @@ fun ProductItem(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = placeNameOrDistance,
-                            color = Color.Gray,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                            modifier = Modifier.padding(top = 4.dp),
-                            textAlign = TextAlign.Start,
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 2
-                        )
+                        if (placeNameOrDistance.isNotEmpty()) {
+                            Text(
+                                text = placeNameOrDistance,
+                                color = Color.Gray,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Normal,
+                                modifier = Modifier.padding(top = 4.dp),
+                                textAlign = TextAlign.Start,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 2
+                            )
+                        }
                     }
 
                     // Row for RateCard
@@ -132,7 +135,7 @@ fun ProductItem(
                             .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        RateCard(rate = rate.toDouble())
+                        RateCard(rate = rate.toDouble(), reviewCount = reviewCount)
                     }
                 }
             }
@@ -201,7 +204,13 @@ private fun getRandomColor(): Int {
 }
 
 @Composable
-fun RateCard(rate: Double) {
+fun RateCard(
+    rate: Double,
+    reviewCount: Int = 0
+) {
+    // Eğer rate -1 ise, RateCard'ı gösterme
+    if (rate == -1.0) return
+
     Card(
         modifier = Modifier
             .padding(4.dp)
@@ -219,7 +228,6 @@ fun RateCard(rate: Double) {
                 .width(274.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
-
         ) {
             Icon(
                 imageVector = Icons.Rounded.Star,
@@ -228,18 +236,17 @@ fun RateCard(rate: Double) {
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                text = "4.0",
+                text = String.format("%.1f", rate),
                 fontSize = 24.sp,
                 color = Color(0xFFFFD02B)
             )
             Text(
-                text = "(+100)",
+                text = "(+$reviewCount)",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.align(Alignment.Bottom)
             )
         }
-
     }
 }
 

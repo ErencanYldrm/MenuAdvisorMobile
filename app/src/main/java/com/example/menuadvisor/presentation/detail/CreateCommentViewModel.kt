@@ -61,6 +61,9 @@ class CreateCommentViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.userId.collect { savedUserId ->
                 Log.d("CreateCommentDebug", "UserPreferences - UserId: $savedUserId")
+                if (savedUserId.isNullOrEmpty()) {
+                    Log.e("CreateCommentDebug", "UserId is null or empty!")
+                }
                 userId.postValue(savedUserId)
             }
         }
@@ -148,7 +151,7 @@ class CreateCommentViewModel @Inject constructor(
             _isLoading.value = true
             val response = productRepository.addProduct(name, description, image, rate, price, placeId)
             if (response.isSuccessful) {
-                productId.value = response.body()?.data
+                productId.value = response.body()?.data as? Int
             }
             _isLoading.value = false
         }
@@ -158,6 +161,17 @@ class CreateCommentViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                if (reviewRequest.createdBy.isEmpty()) {
+                    Log.e("CreateCommentDebug", "CreatedBy is empty! UserId: ${userId.value}")
+                    _reviewResponse.value = ApiResponse(
+                        data = null,
+                        errors = null,
+                        message = "Kullanıcı bilgisi bulunamadı",
+                        succeeded = false
+                    )
+                    return@launch
+                }
+                
                 Log.d("CreateCommentDebug", "Sending ReviewRequest: $reviewRequest")
                 val response = reviewRepository.postReview(reviewRequest)
                 if (response.isSuccessful) {

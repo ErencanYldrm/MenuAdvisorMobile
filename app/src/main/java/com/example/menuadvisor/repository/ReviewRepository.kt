@@ -2,11 +2,14 @@ package com.example.menuadvisor.repository
 
 import android.util.Log
 import com.example.menuadvisor.api.ReviewService
+import com.example.menuadvisor.data.UserPreferences
 import com.example.menuadvisor.model.ReviewRequest
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class ReviewRepository @Inject constructor(
-    private val reviewService: ReviewService
+    private val reviewService: ReviewService,
+    private val userPreferences: UserPreferences
 ) {
     suspend fun getAllReviews(
         pageNumber: Int? = 1,
@@ -40,6 +43,17 @@ class ReviewRepository @Inject constructor(
 
     suspend fun postReview(
         reviewRequest: ReviewRequest
-    ) = reviewService.postReview(requestBody = reviewRequest)
+    ) = reviewService.postReview(
+        token = "Bearer ${userPreferences.userToken.first()}",
+        requestBody = reviewRequest
+    )
 
+    suspend fun deleteReview(reviewId: Int) = reviewService.deleteReview(
+        token = "Bearer ${userPreferences.userToken.first()}",
+        id = reviewId
+    )
+
+    suspend fun getReviewCountByPlaceId(
+        placeId: Int
+    ) = reviewService.getReviewCountByPlaceId(placeId)
 }
