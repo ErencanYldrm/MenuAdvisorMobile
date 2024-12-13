@@ -1,6 +1,5 @@
 package com.example.menuadvisor.presentation.detail
 
-
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Base64
@@ -49,9 +48,15 @@ class CreateCommentViewModel @Inject constructor(
     private val _reviewResponse = MutableStateFlow<ApiResponse<Int>?>(null)
     val reviewResponse: StateFlow<ApiResponse<Int>?> = _reviewResponse
 
+    private val _selectedImage = MutableStateFlow<Uri?>(null)
+    val selectedImage: StateFlow<Uri?> = _selectedImage
+
+    private val _initialImage = MutableStateFlow<String?>(null)
+    val initialImage: StateFlow<String?> = _initialImage
+
     var placeId = MutableLiveData<Int>()
     var placeName = MutableLiveData<String>()
-    var productId = MutableLiveData<Int?>()
+    var productId = mutableStateOf<Int?>(null)
     var image  = MutableLiveData<String>()
     var imageUri = MutableLiveData<Uri>()
 
@@ -217,6 +222,88 @@ class CreateCommentViewModel @Inject constructor(
         }
     }
 
+    fun setSelectedImage(uri: Uri?) {
+        _selectedImage.value = uri
+        if (uri == null) {
+            // Eğer resim kaldırıldıysa, initial image'ı da temizle
+            _initialImage.value = null
+        }
+    }
+
+    fun setInitialImage(imageBase64: String?) {
+        _initialImage.value = imageBase64
+        Log.d("CreateCommentDebug", "Initial image set: $imageBase64")
+    }
+
+    fun getBase64FromUri(uri: Uri, contentResolver: ContentResolver): String {
+        val inputStream = contentResolver.openInputStream(uri)
+        val bytes = inputStream?.readBytes()
+        return Base64.encodeToString(bytes, Base64.DEFAULT)
+    }
+
+    fun submitReview(
+        rating: Int,
+        comment: String,
+        imageUri: Uri?,
+        contentResolver: ContentResolver,
+        reviewId: Int? = null,
+        isEdit: Boolean = false
+    ) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                
+                // Resim kontrolü
+                val imageBase64 = when {
+                    imageUri != null -> getBase64FromUri(imageUri, contentResolver) // Yeni resim seçildi
+                    _initialImage.value != null -> _initialImage.value // Mevcut resim korundu
+                    else -> null // Resim yok veya silindi
+                }
+
+                val reviewRequest = ReviewRequest(
+                    productId = productId.value ?: 0,
+                    rate = rating,
+                    id = reviewId ?: 0,
+                    description = comment,
+                    image = imageBase64
+                )
+
+                Log.d("CreateCommentDebug", "Submitting review with image: ${imageBase64?.take(100)}")
+                Log.d("CreateCommentDebug", "ReviewRequest: description=${reviewRequest.description}, rate=${reviewRequest.rate}, productId=${reviewRequest.productId}")
+
+                val response = if (isEdit && reviewId != null) {
+                    reviewRepository.updateReview(reviewId, reviewRequest)
+                } else {
+                    reviewRepository.postReview(reviewRequest)
+                }
+
+                if (response.isSuccessful) {
+                    _reviewResponse.value = ApiResponse(
+                        succeeded = true,
+                        message = if (isEdit) "Yorum başarıyla güncellendi" else "Yorum başarıyla eklendi",
+                        data = response.body()?.data,
+                        errors = null
+                    )
+                } else {
+                    _reviewResponse.value = ApiResponse(
+                        succeeded = false,
+                        message = "Bir hata oluştu: ${response.message()}",
+                        data = null,
+                        errors = null
+                    )
+                }
+            } catch (e: Exception) {
+                _reviewResponse.value = ApiResponse(
+                    succeeded = false,
+                    message = "Bir hata oluştu: ${e.message}",
+                    data = null,
+                    errors = null
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun uriToBase64(context: Context, uri: Uri): String {
         val contentResolver: ContentResolver = context.contentResolver

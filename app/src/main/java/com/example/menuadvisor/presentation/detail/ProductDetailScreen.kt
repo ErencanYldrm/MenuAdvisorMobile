@@ -61,6 +61,7 @@ import com.example.menuadvisor.components.RateCard
 import com.example.menuadvisor.model.ProductData
 import com.example.menuadvisor.model.ReviewData
 import com.example.menuadvisor.presentation.favorite.FavoritesViewModel
+import android.net.Uri
 
 @Composable
 fun ProductDetailScreen(
@@ -227,6 +228,16 @@ fun ProductDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable {
+                            // URL encode the parameters to handle special characters
+                            val encodedComment = Uri.encode(review.description)
+                            val encodedImage = Uri.encode(review.image)
+                            
+                            // Yorumu düzenleme ekranına git
+                            navController?.navigate(
+                                "createcomment/${review.rate}/${productId}?reviewId=${review.id}&initialComment=${encodedComment}&isEdit=true&initialImage=${encodedImage}"
+                            )
+                        }
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -182,24 +182,6 @@ fun ReviewCard(
                         )
                     }
 
-                    // Fiyat bilgisi varsa göster
-                    review.price?.let { price ->
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "Fiyat:",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "$price ₺",
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
                 }
 
                 // Sağ tarafta düzenle ve sil butonları

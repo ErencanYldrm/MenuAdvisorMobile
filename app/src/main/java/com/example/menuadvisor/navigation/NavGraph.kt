@@ -64,10 +64,12 @@ fun NavGraph(startDestination: String = "login") {
         }
         composable("productDetailScreen/{productId}") { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId")?.toInt()
-            ProductDetailScreen(productId = productId, navController = navController)
+            if (productId != null) {
+                ProductDetailScreen(productId = productId, navController = navController)
+            }
         }
         composable(
-            route = "createcomment/{rating}/{productId}?reviewId={reviewId}&initialComment={initialComment}&isEdit={isEdit}",
+            route = "createcomment/{rating}/{productId}?reviewId={reviewId}&initialComment={initialComment}&isEdit={isEdit}&initialImage={initialImage}",
             arguments = listOf(
                 navArgument("rating") { type = NavType.IntType },
                 navArgument("productId") { type = NavType.IntType },
@@ -84,6 +86,11 @@ fun NavGraph(startDestination: String = "login") {
                 navArgument("isEdit") {
                     type = NavType.BoolType
                     defaultValue = false
+                },
+                navArgument("initialImage") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
                 }
             )
         ) { backStackEntry ->
@@ -92,13 +99,15 @@ fun NavGraph(startDestination: String = "login") {
             val reviewId = backStackEntry.arguments?.getString("reviewId")?.toIntOrNull()
             val initialComment = backStackEntry.arguments?.getString("initialComment") ?: ""
             val isEdit = backStackEntry.arguments?.getBoolean("isEdit") ?: false
+            val initialImage = backStackEntry.arguments?.getString("initialImage") ?: ""
 
             CreateCommentScreen(
                 navController = navController,
                 initialRating = rating,
                 productId = productId,
                 reviewId = reviewId,
-                initialComment = initialComment,
+                comment = initialComment,
+                image = initialImage,
                 isEdit = isEdit
             )
         }
