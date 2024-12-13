@@ -62,6 +62,7 @@ import com.example.menuadvisor.model.ProductData
 import com.example.menuadvisor.model.ReviewData
 import com.example.menuadvisor.presentation.favorite.FavoritesViewModel
 import android.net.Uri
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun ProductDetailScreen(
@@ -72,6 +73,8 @@ fun ProductDetailScreen(
 ) {
     val scrollState = rememberLazyListState()
     val product by viewModel.product.observeAsState()
+    val reviews by viewModel.reviews.collectAsState()
+    val userNames by viewModel.userNames.collectAsState()
     val reviewList by viewModel.commentList.observeAsState(emptyList())
     var selectedRating by remember { mutableStateOf(0) }
     var isFavorite by remember { mutableStateOf(false) }
@@ -223,69 +226,71 @@ fun ProductDetailScreen(
             }
 
             // Yorumlar
-            items(reviewList) { review ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable {
-                            // URL encode the parameters to handle special characters
-                            val encodedComment = Uri.encode(review.description)
-                            val encodedImage = Uri.encode(review.image)
-                            
-                            // Yorumu düzenleme ekranına git
-                            navController?.navigate(
-                                "createcomment/${review.rate}/${productId}?reviewId=${review.id}&initialComment=${encodedComment}&isEdit=true&initialImage=${encodedImage}"
+            reviews.forEach { review ->
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable {
+                                // URL encode the parameters to handle special characters
+                                val encodedComment = Uri.encode(review.description)
+                                val encodedImage = Uri.encode(review.image)
+                                
+                                // Yorumu düzenleme ekranına git
+                                navController?.navigate(
+                                    "createcomment/${review.rate}/${productId}?reviewId=${review.id}&initialComment=${encodedComment}&isEdit=true&initialImage=${encodedImage}"
+                                )
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = userNames[review.createdBy?.toString()] ?: "Kullanıcı",
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = review.created?.substring(0, 10) ?: "",
+                                color = Color.Gray,
+                                fontSize = 12.sp
                             )
                         }
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "User",
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = review.created?.substring(0, 10) ?: "",
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Rounded.Star,
-                                contentDescription = null,
-                                tint = if (index < (review.rate ?: 0)) Color(0xFFFFD02B) else Color.LightGray,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                    if (!review.description.isNullOrEmpty()) {
-                        Text(
-                            text = review.description,
-                            fontSize = 14.sp,
+                        Row(
                             modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            repeat(5) { index ->
+                                Icon(
+                                    imageVector = Icons.Rounded.Star,
+                                    contentDescription = null,
+                                    tint = if (index < (review.rate ?: 0)) Color(0xFFFFD02B) else Color.LightGray,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        if (!review.description.isNullOrEmpty()) {
+                            Text(
+                                text = review.description,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                        review.image?.takeIf { it.isNotBlank() }?.let { imageBase64 ->
+                            Base64Image(
+                                base64String = imageBase64,
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .padding(vertical = 4.dp)
+                            )
+                        }
+                        Divider(
+                            modifier = Modifier.padding(top = 8.dp),
+                            color = Color.LightGray,
+                            thickness = 0.5.dp
                         )
                     }
-                    review.image?.takeIf { it.isNotBlank() }?.let { imageBase64 ->
-                        Base64Image(
-                            base64String = imageBase64,
-                            modifier = Modifier
-                                .size(200.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(vertical = 4.dp)
-                        )
-                    }
-                    Divider(
-                        modifier = Modifier.padding(top = 8.dp),
-                        color = Color.LightGray,
-                        thickness = 0.5.dp
-                    )
                 }
             }
         }

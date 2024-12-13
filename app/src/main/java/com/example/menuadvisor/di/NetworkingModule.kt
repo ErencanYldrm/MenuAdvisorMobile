@@ -1,11 +1,13 @@
 package com.example.menuadvisor.di
 
+import com.example.menuadvisor.api.AccountService
 import com.example.menuadvisor.api.AuthService
 import com.example.menuadvisor.api.FavoritesService
 import com.example.menuadvisor.api.PlaceService
 import com.example.menuadvisor.api.ProductService
 import com.example.menuadvisor.api.ReviewService
 import com.example.menuadvisor.data.UserPreferences
+import com.example.menuadvisor.repository.AccountRepository
 import com.example.menuadvisor.repository.AuthRepository
 import com.example.menuadvisor.repository.FavoritesRepository
 import com.example.menuadvisor.repository.PlaceRepository
@@ -72,6 +74,18 @@ class NetworkingModule {
     @Provides
     fun provideAuthRepository(authService: AuthService): AuthRepository {
         return AuthRepository(authService)
+    }
+
+    @Singleton
+    @Provides
+    fun provideAccountService(retrofit: Retrofit): AccountService {
+        return retrofit.create(AccountService::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideAccountRepository(accountService: AccountService): AccountRepository {
+        return AccountRepository(accountService)
     }
 
     @Singleton
