@@ -3,9 +3,7 @@ package com.example.menuadvisor.api
 import com.example.menuadvisor.model.ApiResponse
 import com.example.menuadvisor.model.PlaceData
 import retrofit2.Response
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface PlaceService {
 
@@ -21,5 +19,11 @@ interface PlaceService {
     @GET("api/v1/Place/{id}")
     suspend fun getPlace(
         @Path("id") id: Int
+    ): Response<ApiResponse<PlaceData>>
+
+    @PUT("api/v1/Place/{id}")
+    suspend fun updatePlace(
+        @Path("id") id: Int,
+        @Body place: PlaceData
     ): Response<ApiResponse<PlaceData>>
 }

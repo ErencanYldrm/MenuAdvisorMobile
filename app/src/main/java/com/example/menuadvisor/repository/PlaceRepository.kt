@@ -1,6 +1,7 @@
 package com.example.menuadvisor.repository
 
 import com.example.menuadvisor.api.PlaceService
+import com.example.menuadvisor.model.PlaceData
 import javax.inject.Inject
 
 class PlaceRepository @Inject constructor(
@@ -24,5 +25,13 @@ class PlaceRepository @Inject constructor(
         id: Int
     ) = placeService.getPlace(
         id = id
+    )
+
+    suspend fun updatePlace(
+        id: Int,
+        place: PlaceData
+    ) = placeService.updatePlace(
+        id = id,
+        place = place
     )
 }

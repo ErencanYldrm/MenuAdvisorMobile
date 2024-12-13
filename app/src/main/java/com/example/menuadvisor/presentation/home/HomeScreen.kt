@@ -170,7 +170,7 @@ fun RestaurantSection(
                 if (rating != "-1") {  // rating -1 değilse göster
                     ProductItem(
                         title = name,
-                        image = "",
+                        image = place.logo ?: "",
                         placeNameOrDistance = if (distance != null) String.format("%.1f km", distance) else "Mesafe hesaplanıyor...",
                         rate = rating,
                         reviewCount = reviewCount,

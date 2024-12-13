@@ -121,12 +121,11 @@ fun PlaceDetailScreen(
                 .padding(it)
         ) {
             PlaceInfoContent(place = place, reviewCount = reviewCount, distance = distance)
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Coffees",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(8.dp)
             )
             if(productList.isNullOrEmpty()) {
                 Text(
@@ -147,6 +146,7 @@ fun PlaceDetailScreen(
                             image = product.image ?: "",
                             placeNameOrDistance = place?.name.toString(),
                             rate = product.rate.toString(),
+                            reviewCount = 1,
                             isFavorited = false,
                             onClick = {
                                 navController?.navigate("productDetailScreen/${product.id}")
@@ -171,23 +171,6 @@ fun PlaceInfoContent(place: PlaceData?, reviewCount: Int = 0, distance: Float? =
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Place Logo, displays default if base64 image is empty
-            if (!place?.image.isNullOrEmpty()) {
-                place?.image?.let {
-                    Base64Image(
-                        base64String = it,
-                        modifier = Modifier.size(80.dp)
-                    )
-                }
-            } else {
-                PlaceLogo(
-                    title = place?.name ?: "Place Name",
-                    rate = place?.rating?.toString() ?: "0.0",
-                    size = 80,
-                    showRate = false
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -199,11 +182,10 @@ fun PlaceInfoContent(place: PlaceData?, reviewCount: Int = 0, distance: Float? =
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Location Icon",
+                            painter = painterResource(id = R.drawable.location_ic),
+                            contentDescription = "Clock Icon",
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = if (distance != null) String.format("%.1f km", distance) else "Mesafe hesaplanıyor..."
                         )

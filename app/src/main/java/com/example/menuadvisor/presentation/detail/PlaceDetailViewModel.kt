@@ -13,12 +13,13 @@ import com.example.menuadvisor.repository.ReviewRepository
 import com.example.menuadvisor.utils.LocationUtils
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
-// PlaceDetailViewModel.kt
 @HiltViewModel
 class PlaceDetailViewModel @Inject constructor(
     private val placeRepository: PlaceRepository,
@@ -78,7 +79,8 @@ class PlaceDetailViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     place.postValue(response.body()?.data as PlaceData?)
                     getReviewCount(it)
-                    calculateDistance() // Mekan bilgisi geldiğinde mesafeyi hesapla
+                    calculateDistance()
+                    updatePlaceRating()
                 }
             }
         }
@@ -100,13 +102,14 @@ class PlaceDetailViewModel @Inject constructor(
     }
 
     fun getProductsByPlaceId() {
-        placeId.value?.let {
+        placeId.value?.let { placeId ->
             viewModelScope.launch {
                 try {
-                    val response = productRepository.getProductsByPlaceId(it)
+                    val response = productRepository.getProductsByPlaceId(placeId)
                     if (response.isSuccessful) {
-                        response.body()?.data?.let { data ->
-                            productList.postValue(data as List<ProductData>)
+                        response.body()?.data?.let { products ->
+                            productList.postValue(products as List<ProductData>)
+                            updatePlaceRating()
                         }
                     }
                 } catch (e: Exception) {
@@ -115,6 +118,60 @@ class PlaceDetailViewModel @Inject constructor(
             }
         }
     }
+
+    private fun updatePlaceRating() {
+        viewModelScope.launch {
+            try {
+                val products = productList.value ?: return@launch
+                if (products.isEmpty()) {
+                    Log.d("PlaceDetail", "No products found for rating calculation")
+                    return@launch
+                }
+
+                var totalRating = 0.0
+                var totalReviews = 0
+
+                products.forEach { product ->
+                    Log.d("PlaceDetail", "Processing product ${product.name} with rate: ${product.rate}")
+                    val reviewResponse = reviewRepository.getReviewsByProductId(product.id ?: return@forEach)
+                    if (reviewResponse.isSuccessful) {
+                        reviewResponse.body()?.data?.let { reviews ->
+                            val productReviews = reviews as List<*>
+                            Log.d("PlaceDetail", "Product ${product.name} has ${productReviews.size} reviews")
+                            if (productReviews.isNotEmpty()) {
+                                val productRating = product.rate ?: 0.0
+                                val productTotalRating = productRating * productReviews.size
+                                Log.d("PlaceDetail", "Product ${product.name}: rating=$productRating, reviews=${productReviews.size}, totalRating=$productTotalRating")
+                                totalRating += productTotalRating
+                                totalReviews += productReviews.size
+                            }
+                        }
+                    } else {
+                        Log.e("PlaceDetail", "Failed to get reviews for product ${product.name}: ${reviewResponse.message()}")
+                    }
+                }
+
+                Log.d("PlaceDetail", "Final calculation: totalRating=$totalRating, totalReviews=$totalReviews")
+                if (totalReviews > 0) {
+                    val averageRating = (totalRating / totalReviews * 10.0).roundToInt() / 10.0
+                    Log.d("PlaceDetail", "Calculated average rating: $averageRating")
+                    place.value?.let { currentPlace ->
+                        val updatedPlace = currentPlace.copy(rating = averageRating.toString())
+                        val response = placeRepository.updatePlace(placeId.value ?: return@launch, updatedPlace)
+                        if (response.isSuccessful) {
+                            place.postValue(updatedPlace)
+                            Log.d("PlaceDetail", "Place rating updated successfully: $averageRating")
+                        } else {
+                            Log.e("PlaceDetail", "Failed to update place rating: ${response.message()}")
+                        }
+                    }
+                } else {
+                    Log.d("PlaceDetail", "No reviews found for any products")
+                }
+            } catch (e: Exception) {
+                Log.e("PlaceDetail", "Error updating place rating: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
 }
-
-

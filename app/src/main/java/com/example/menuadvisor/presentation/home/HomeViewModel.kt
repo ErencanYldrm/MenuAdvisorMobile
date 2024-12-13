@@ -109,7 +109,7 @@ class HomeViewModel @Inject constructor(
 
     fun getAllPlaces() {
         viewModelScope.launch {
-            val response = placeRepository.getPlaces(pageSize = 15)
+            val response = placeRepository.getPlaces()
             if (response.isSuccessful) {
                 response.body()?.data?.let { places ->
                     _allPlaces.value = places

@@ -144,15 +144,6 @@ fun LoginScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Forgot Password Link
-        Text(
-            text = "Forgot Password?",
-            modifier = Modifier.clickable {
-                navController.navigate("forgot_password_screen")
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
         Spacer(modifier = Modifier.height(32.dp))
 
         // Login Button

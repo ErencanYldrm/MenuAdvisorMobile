@@ -62,7 +62,7 @@ class FindViewModel @Inject constructor(
     private fun getAllPlaces() {
         viewModelScope.launch {
             try {
-                val response = placeRepository.getPlaces(pageSize = 50)
+                val response = placeRepository.getPlaces()
                 if (response.isSuccessful) {
                     response.body()?.data?.let { places ->
                         _places.value = places

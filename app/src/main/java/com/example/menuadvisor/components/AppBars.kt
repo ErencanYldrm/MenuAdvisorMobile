@@ -134,9 +134,6 @@ fun DetailAppBar(
                 base64String = image, modifier = Modifier
                     .fillMaxWidth()
             )
-            PlaceLogo(title = title, rate = "", size = 110, showRate = false) {
-
-            }
 
         }
 
@@ -322,6 +319,5 @@ fun AuthAppBar(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
